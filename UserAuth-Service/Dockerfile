@@ -1,6 +1,6 @@
 FROM node:14.16.0-alpine3.13
 
-WORKDIR /app/AURAMART-Microservice/Server/UserAuth-Service
+WORKDIR /app/AYURMART-Microservice/Server/UserAuth-Service
 
 COPY package*.json ./
 
