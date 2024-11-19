@@ -27,5 +27,5 @@ app.use("/api/seller", SellerRoutes);
 mongoose.set("strictQuery", false);
 mongoose.connect(URI, PARAMS)
     .then(() => app.listen(PORT, 
-        () => console.info(`Seller Service is running on PORT ${PORT} 🔥`)))
+        () => console.info(`Admin Service is running on PORT ${PORT} 🔥`)))
     .catch((err) => console.error(err.message));

@@ -5,7 +5,7 @@ import asyncHandler from "express-async-handler";
 
 const authMiddleware = asyncHandler (async (req, res, next) => {
     let token;
-    //get the token from auhtorization header 
+    //get the token from authorization header 
     if(req?.headers?.authorization?.startsWith("Bearer")){
         token = req.headers?.authorization?.split(" ")[1];
         try {

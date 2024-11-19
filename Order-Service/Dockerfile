@@ -1,4 +1,4 @@
-FROM node:14.16.0-alpine3.13
+FROM node:16
 
 WORKDIR /app/AURAMART-Microservice/Server/Order-Service
 
@@ -8,6 +8,6 @@ RUN npm install
 
 COPY . . 
 
-EXPOSE 7006
+EXPOSE 7003
 
 CMD ["npm","start"]
