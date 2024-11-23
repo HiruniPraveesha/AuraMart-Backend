@@ -20,8 +20,9 @@ var productSchema = new mongoose.Schema({
         required:true,
     },
     category:{
-        type:String,
-        required:true,
+        type: String,
+        
+        required: true 
     },
     brand: {
         type:String,

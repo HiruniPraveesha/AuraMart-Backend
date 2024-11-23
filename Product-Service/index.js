@@ -6,6 +6,7 @@ import morgan from "morgan";
 import ProductRoutes from "./routes/ProductRoutes.js";
 import cookieParser from "cookie-parser";
 
+
 dotenv.config();
 
 const app = express();

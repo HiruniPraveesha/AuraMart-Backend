@@ -1,7 +1,9 @@
 import express from "express";
 import ProductController from "../controllers/ProductController.js";
-
+import {getProductsByCategory} from '../controllers/CategoryController.js';
+import { getAllCategoriesWithProducts } from '../controllers/CategoryController.js';
 import UploadImages from "../middleware/uploadImages.js";
+import { getAllCategories } from "../controllers/CategoryController.js";
 import axios from "axios";
 
 const verifyToken = async (req, res, next) => {
@@ -32,13 +34,17 @@ router.put('/upload/:id',
     UploadImages.productImgResize,
     ProductController.uploadImages
 );
+router.get('/categories/product', getAllCategoriesWithProducts);
+router.get("/category/:category", ProductController.getProductsByCategory);
 router.get('/:id', ProductController.getaProduct);
 router.get('/', ProductController.getAllProducts);
 router.put('/rating', verifyToken, ProductController.rating);
-router.put('/:id', verifyToken, ProductController.updateProduct);
+router.put('/:id', ProductController.updateProduct);
 router.put("/", ProductController.bulkUpdate)
 router.delete('/:id', ProductController.deleteProduct);
 router.post('/', ProductController.createProduct);
+router.get('/categories/:slug', getProductsByCategory);
+router.get("/categories", getAllCategories);
 
 
 
