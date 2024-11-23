@@ -5,6 +5,7 @@ import cloudinaryUploadImg from "../utils/cloudinary.js";
 import fs from 'fs';
 import axios from "axios";
 
+
 // function to add new product to the system
 const createProduct = asyncHandler(async (req, res) => {
     try {

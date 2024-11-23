@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import morgan from "morgan";
-import SellerRoutes from "./routes/SellerRoutes.js";
+import AdminRoutes from "./routes/AdminRoutes.js";
 import cookieParser from "cookie-parser";
 
 dotenv.config();
@@ -22,7 +22,7 @@ app.use(express.json());
 app.use(cors());
 app.use(cookieParser());
 
-app.use("/api/seller", SellerRoutes);
+app.use("/api/admin", AdminRoutes);
 
 mongoose.set("strictQuery", false);
 mongoose.connect(URI, PARAMS)

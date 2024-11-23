@@ -1,5 +1,6 @@
 import express from "express";
 import ProductController from "../controllers/ProductController.js";
+
 import UploadImages from "../middleware/uploadImages.js";
 import axios from "axios";
 
@@ -38,5 +39,7 @@ router.put('/:id', verifyToken, ProductController.updateProduct);
 router.put("/", ProductController.bulkUpdate)
 router.delete('/:id', ProductController.deleteProduct);
 router.post('/', ProductController.createProduct);
+
+
 
 export default router;
