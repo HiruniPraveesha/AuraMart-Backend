@@ -34,6 +34,7 @@ router.put('/upload/:id',
     UploadImages.productImgResize,
     ProductController.uploadImages
 );
+router.get("/categories", getAllCategories);
 router.get('/categories/product', getAllCategoriesWithProducts);
 router.get("/category/:category", ProductController.getProductsByCategory);
 router.get('/:id', ProductController.getaProduct);
@@ -44,7 +45,7 @@ router.put("/", ProductController.bulkUpdate)
 router.delete('/:id', ProductController.deleteProduct);
 router.post('/', ProductController.createProduct);
 router.get('/categories/:slug', getProductsByCategory);
-router.get("/categories", getAllCategories);
+
 
 
 

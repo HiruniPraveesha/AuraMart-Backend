@@ -11,9 +11,9 @@ mongoose.connect('mongodb+srv://hirunipraveesha18:N3L0BtXaci7arCGW@cluster0.d46w
 
         // Seed the database with categories
         const categories = [
-            { name: 'Electronics', slug: 'electronics' },
-            { name: 'Women', slug: 'women' },
-            { name: 'Hri', slug: 'hri' },
+            { name: 'Skin Care', slug: 'skin care' },
+            { name: 'Hair Care', slug: 'hair care' },
+            { name: 'Foot Care', slug: 'foot care' },
         ];
 
         try {

@@ -72,12 +72,13 @@ export const getAllCategoriesWithProducts = async (req, res) => {
   };
 
   export const getAllCategories = async (req, res) => {
+    console.log("GET /api/categories endpoint hit"); // Log incoming requests
     try {
-        const categories = await Category.find(); // Retrieve all categories from the database
+        const categories = await Category.find();
         if (!categories || categories.length === 0) {
             return res.status(404).json({ message: 'No categories found' });
         }
-        return res.status(200).json(categories);  // Send the categories as a response
+        return res.status(200).json(categories);
     } catch (error) {
         console.error('Error fetching categories:', error);
         return res.status(500).json({ message: 'An error occurred while fetching categories' });
