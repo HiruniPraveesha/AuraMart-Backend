@@ -5,18 +5,23 @@ import cloudinaryUploadImg from "../utils/cloudinary.js";
 import fs from 'fs';
 import axios from "axios";
 
-
-// function to add new product to the system
 const createProduct = asyncHandler(async (req, res) => {
     try {
         if (req.body.title) {
             req.body.slug = slugify(req.body.title);
         }
+
+        // Ensure category is passed in the request body
+        if (!req.body.category) {
+            throw new Error("Category is required");
+        }
+
+        // Create new product with category
         const newProduct = await Product.create(req.body);
         res.json({
-            message: "Product created",
+            message: "Product created successfully",
             newProduct: newProduct,
-        })
+        });
     } catch (error) {
         throw new Error(error);
     }
@@ -219,6 +224,24 @@ const bulkUpdate = asyncHandler(async (req, res) => {
     }
 })
 
+const getProductsByCategory = asyncHandler(async (req, res) => {
+    const { category } = req.params; // Get the category from the route parameter
+
+    try {
+        // Query the products based on the selected category
+        const products = await Product.find({ category })
+            .sort("-createdAt"); // Sort by most recent
+
+        if (products.length === 0) {
+            return res.status(404).json({ message: "No products found in this category" });
+        }
+
+        res.json(products);
+    } catch (error) {
+        throw new Error(error);
+    }
+});
+
 export default {
     createProduct,
     getaProduct,
@@ -226,6 +249,7 @@ export default {
     updateProduct,
     deleteProduct,
     rating,
+    getProductsByCategory,
     uploadImages,
     bulkUpdate
 }
