@@ -29,7 +29,7 @@ services:
   order:
     build: ./Order-Service
     ports:
-      - "7006:7006"
+      - "7003:7003"
     environment:
       DB_URL: mongodb+srv://hirunipraveesha18:N3L0BtXaci7arCGW@cluster0.d46wa.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
     networks:

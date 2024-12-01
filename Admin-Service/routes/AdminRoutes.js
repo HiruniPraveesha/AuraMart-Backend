@@ -10,4 +10,6 @@ router.get('/:id', AdminController.getaProduct);
 router.post('/', AdminController.createProdcut);
 router.get('/', AdminController.getAllProducts);
 
+
+
 export default router;

@@ -1,6 +1,7 @@
 FROM node:16
 
-WORKDIR /app/AURAMART-Microservice/Server/Order-Service
+
+WORKDIR /app/AYURMART-Microservice/Server/Order-Service
 
 COPY package*.json ./
 

@@ -9,11 +9,9 @@ router.put('/password', AuthMiddlewares.authMiddleware, UserControllers.updatePa
 router.post('/forgot-password-token', UserControllers.forgotPasswordToken);
 router.put('/reset-password/:token', UserControllers.resetPassword);
 router.post('/login', UserControllers.loginUser);
-router.post('/admin-login', UserControllers.loginAdmin);
 router.get('/all-users', UserControllers.getAllUsers);
 router.get('/refresh', UserControllers.handleRefreshToken);
 router.get('/logout', UserControllers.logout);
-router.get('/wishlist', AuthMiddlewares.authMiddleware, UserControllers.getWishlist);
 router.get('/:id', UserControllers.getUser);
 router.delete('/:id', UserControllers.deleteUser);
 router.put('/update-user', AuthMiddlewares.authMiddleware, UserControllers.updateUser);

@@ -117,57 +117,6 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 
-//login as admin
-const loginAdmin = asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
-        res.status(400);
-        throw new Error("Please enter email and password");
-    }
-
-    const admin = await User.findOne({ email });
-    if (admin.role !== 'admin') {
-        throw new Error("Not Authorized");
-    }
-
-    if (!admin) {
-        res.status(400);
-        throw new Error("User not found, Please SignUp");
-    }
-
-    const passwordIsCorrect = await bcrypt.compare(password, admin.password);
-
-    if (admin && passwordIsCorrect) {
-        const refreshToken = generateRefreshToken(admin?._id);
-        const { _id, firstName, email, mobile, role} = admin;
-        const updateUser = await User.findOneAndUpdate(
-            admin._id,
-            {
-                refreshToken: refreshToken
-            },
-            {
-                new: true
-            }
-        )
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            maxAge: 60 * 60 * 72 * 1000,
-        })
-        res.status(200).json({
-            _id,
-            firstName,
-            email,
-            mobile,
-            token: generateToken(admin._id),
-            role
-        })
-    } else {
-        res.status(400);
-        throw new Error("Invalid Email or Password");
-    }
-
-});
-
 //save address
 const saveAddress = asyncHandler(async (req, res) => {
     const { _id } = req.user;
@@ -382,43 +331,6 @@ const resetPassword = asyncHandler(async (req, res) => {
     res.json(user);
 });
 
-//get wish list
-const getWishlist = asyncHandler(async (req, res) => {
-    const { _id } = req.user;
-    try {
-        const user = await User.findById(_id).populate("wishlist");
-        res.json(user);
-    } catch (error) {
-        throw new Error(error);
-    }
-});
-
-//add to wishlist
-const addToWishlist = asyncHandler (async (req, res) => {
-    const { _id } = req.user;
-    const { prodId } = req.body;
-    try {
-        const user = await User.findById(_id);
-        const alreadyAdded = user.wishlist.find((id) => id.toString() === prodId);
-        if (alreadyAdded){
-            let user = await User.findByIdAndUpdate(_id, {
-                $pull: {wishlist: prodId},
-            }, {
-                new: true,
-            });
-            res.json(user);
-        }else{
-            let user = await User.findByIdAndUpdate(_id, {
-                $push: {wishlist: prodId},
-            }, {
-                new: true,
-            });
-            res.json(user);
-        }
-    } catch (error) {
-        throw new Error(error);
-    }
-});
 
 //verify token 
 const verifyToken = asyncHandler(async (req, res) => {
@@ -433,16 +345,13 @@ export default {
     updatePassword,
     resetPassword,
     loginUser,
-    loginAdmin,
     getAllUsers,
     handleRefreshToken,
     logout,
-    getWishlist,
     getUser,
     deleteUser,
     saveAddress,
     blockUser,
     unBlockUser,
-    addToWishlist,
     verifyToken
 }

@@ -79,10 +79,12 @@ const signupAdmin = async (req, res) => {
     }
 }
 
+
 export default {
     getAllProducts,
     getaProduct,
     loginAdmin,
     signupAdmin,
-    createProdcut
+    createProdcut,
+
 }
