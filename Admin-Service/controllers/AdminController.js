@@ -14,7 +14,7 @@ const getaProduct = asyncHandler(async (req, res) => {
     }
 });
 
-//function to get all products to the seller dashboard
+//function to get all products to the admin dashboard
 const getAllProducts = asyncHandler(async (req, res) => {
     try {
         const response = await axios.get(`http://product:7005/api/product/`)
@@ -86,5 +86,4 @@ export default {
     loginAdmin,
     signupAdmin,
     createProdcut,
-
 }

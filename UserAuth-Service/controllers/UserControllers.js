@@ -8,62 +8,31 @@ import bcrypt from "bcrypt";
 import generateToken from "../config/jwtToken.js";
 import generateRefreshToken from "../config/refreshToken.js";
 
-
-//Register User 
-const createUser = asyncHandler(async (req, res) => {
-
-    //get from the body
-    const { firstName, lastName, email, mobile, password,role } = req.body;
-    const findUser = await User.findOne({ email });
-
-    //validate inputs
-    if (!email || !password || !firstName || !lastName || !mobile) {
-        res.status(400);
-        throw new Error("Please fill out all fields");
+//create user
+export const createUser = async (req, res) => {
+    try {
+      const { firstName, lastName, email, mobile, password } = req.body;
+  
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email already in use' });
+      }
+  
+      const hashedPassword = await bcrypt.hash(password, 10);
+  
+      const newUser = await User.create({
+        firstName,
+        lastName,
+        email,
+        mobile,
+        password: hashedPassword,
+      });
+  
+      res.status(201).json({ message: 'User created successfully', user: newUser });
+    } catch (err) {
+      res.status(500).json({ message: 'Server error', error: err.message });
     }
-
-    if (!findUser) {
-        const newUser = await User.create({
-            firstName,
-            lastName,
-            email,
-            mobile,
-            password,
-            role
-        });
-    } else {
-        throw new Error("User already exists");
-    }
-
-    const user = await User.findOne({ email });
-
-    //creating refreshtoken 
-    if (user) {
-        const refreshToken = generateRefreshToken(user?._id);
-        const { _id, firstName, email, mobile,role } = user;
-        const updateUser = await User.findOneAndUpdate(
-            user._id,
-            {
-                refreshToken: refreshToken
-            },
-            {
-                new: true
-            }
-        )
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            maxAge: 60 * 60 * 1 * 1000,
-        })
-        res.status(200).json({
-            _id,
-            firstName,
-            email,
-            mobile,
-            token: generateToken(user._id),
-            role
-        })
-    }
-});
+  };
 
 //login User 
 const loginUser = asyncHandler(async (req, res) => {
@@ -110,8 +79,7 @@ const loginUser = asyncHandler(async (req, res) => {
             role
         })
     } else {
-        res.status(400);
-        throw new Error("Invalid Email or Password");
+        res.status(400).json({ message: 'Invalid Email or Password'});
     }
 
 });
@@ -127,7 +95,7 @@ const saveAddress = asyncHandler(async (req, res) => {
         }, {
             new: true
         });
-        res.json(updatedUser);
+        res.status(200).json(updatedUser);
     } catch (error) {
         throw new Error(error);
     }
@@ -171,7 +139,7 @@ const updateUser = asyncHandler(async (req, res) => {
         }, {
             new: true
         });
-        res.json(updatedUser);
+        res.status(200).json(updatedUser);
     } catch (error) {
         throw new Error(error);
     }
@@ -264,7 +232,7 @@ const updatePassword = asyncHandler(async (req, res) => {
     if (password) {
         user.password = password;
         const updatedPasword = await user.save();
-        res.json(updatedPasword);
+        res.json({message:"Updated password successfully" , updatedPasword});
     } else {
         res.json(user);
     }
@@ -294,7 +262,7 @@ const forgotPasswordToken = asyncHandler(async (req, res) => {
             htm: resetURL,
         }
         sendEmail(data);
-        res.json(token);
+        res.json({message : "sent email to reset password" ,token: token});
     } catch (error) {
         throw new Error(error);
     }
@@ -328,13 +296,13 @@ const resetPassword = asyncHandler(async (req, res) => {
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
     await user.save();
-    res.json(user);
+    res.status(200).json({ message: 'Password reset successfully' });
 });
 
 
 //verify token 
 const verifyToken = asyncHandler(async (req, res) => {
-    res.status(200).json({ user: req.user });
+    res.status(200).json({ message: 'Token verified successfully', user: req.user });
 });
   
 

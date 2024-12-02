@@ -84,43 +84,6 @@ const emptyCart = asyncHandler(async (req, res) => {
     }
 });
 
-//apply coupons
-const applyCoupon = asyncHandler(async (req, res) => {
-    const { coupon } = req.body;
-    const { _id } = req.user;
-    try {
-        const response = await axios.get("http://coupon:7003/api/Coupon/", {
-            headers: {
-                'Authorization': `Bearer ${req.headers.authorization.split(' ')[1]}`
-            }
-        });
-        const resCoupon = response.data;
-
-        // check whether the coupon is Valid
-        const validCoupon = resCoupon.find((c) => c.name.toLowerCase() === coupon.toLowerCase());
-
-        if (!validCoupon) {
-            return res.status(400).json({ message: "Invalid coupon code" });
-        }
-        if (validCoupon === null) {
-            throw new Error("Invalid coupon");
-        }
-        let { cartTotal } = await Cart.findOne({ orderby: _id });
-
-        let totalAfterDiscount = (cartTotal - (cartTotal * validCoupon.discount) / 100).toFixed(2);
-        await Cart.findOneAndUpdate(
-            { orderby: _id },
-            { totalAfterDiscount },
-            { new: true }
-        );
-
-        res.json(totalAfterDiscount);
-
-    } catch (error) {
-        console.log(error);
-    }
-});
-
 //calculate cart total
 const calculateCartTotal = (products) => {
     let cartTotal = 0;
@@ -193,5 +156,4 @@ export default {
     getUserCart,
     emptyCart,
     calculateCartTotal,
-    applyCoupon
 }
