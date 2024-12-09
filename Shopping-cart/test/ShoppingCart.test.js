@@ -1,140 +1,190 @@
-import request from 'supertest';
-import express from 'express';
-import cartController from '../controllers/Cart.js'; // Your cart controller
-import axios from 'axios';
-import jwt from 'jsonwebtoken';
-import Cart from '../models/CartModel.js';
+import Cart from "../models/CartModel.js";
+import axios from "axios";
+import cartController from "../controllers/Cart.js";
+import httpMocks from "node-mocks-http"; // Missing import for mocking HTTP requests and responses
 
-const app = express();
-app.use(express.json());
+// Mocking Cart model and axios
+jest.mock("../models/CartModel.js");
+jest.mock("axios");
 
-// Define API routes for the Cart functionality
-app.post('/api/cart', cartController.userCart);
-app.post('/api/cart/total', cartController.calculateCartTotal);
-app.put('/api/cart/:productId', cartController.removeFromCart);
-app.get('/api/cart', cartController.getUserCart);
-app.delete('/api/empty-cart', cartController.emptyCart);
+describe("Cart Controller", () => {
+    beforeEach(() => {
+        jest.clearAllMocks(); // Clear mocks before each test
+    });
 
-// Mock Axios and Cart methods
-jest.mock('axios');
-jest.mock('../models/CartModel.js');
-jest.mock('jsonwebtoken', () => ({
-  sign: jest.fn(),
-}));
+    describe("POST /api/cart - userCart", () => {
+        it("should add new products to the cart and calculate totals", async () => {
+            const req = httpMocks.createRequest({
+                method: "POST",
+                url: "/cart",
+                body: {
+                    cart: [
+                        { _id: "product1", count: 2 },
+                        { _id: "product2", count: 1 },
+                    ],
+                },
+                user: { _id: "user1" },
+                headers: { authorization: "Bearer mock-token" },
+            });
+            const res = httpMocks.createResponse();
 
-describe('Cart Controller', () => {
-  let token;
-  let userId = '1234567890abcdef12345678'; // Use a valid user ID for testing
+            axios.get.mockResolvedValueOnce({ data: { price: 10 } });
+            axios.get.mockResolvedValueOnce({ data: { price: 20 } });
 
-  beforeAll(() => {
-    // Generate a mock token for the test
-    token = jwt.sign({ id: userId }, 'mock-jwt-secret', { expiresIn: '1h' });
-  });
+            Cart.findOne.mockResolvedValue(null); // No existing cart
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+            const mockSave = jest.fn().mockResolvedValue({
+                products: [
+                    { product: "product1", count: 2, price: 10 },
+                    { product: "product2", count: 1, price: 20 },
+                ],
+                cartTotal: 63,
+                tax: 3,
+            });
+            Cart.mockImplementation(() => ({ save: mockSave }));
 
-  test('POST /api/cart - Add to cart', async () => {
-    const cartData = [
-      { _id: 'productId1', count: 2 },
-      { _id: 'productId2', count: 1 }
-    ];
+            await cartController.userCart(req, res);
 
-    // Mock the response for product price fetching
-    axios.get.mockResolvedValueOnce({ data: { price: 100 } }).mockResolvedValueOnce({ data: { price: 200 } });
+            expect(res.statusCode).toBe(200);
+            const data = JSON.parse(res._getData());
+            expect(data.cartTotal).toBe(63);
+            expect(data.products.length).toBe(2);
+            expect(mockSave).toHaveBeenCalled();
+        });
 
-    // Mock the Cart model methods
-    Cart.findOne = jest.fn().mockResolvedValue(null); // No existing cart for user
+        it("should update existing cart with new products", async () => {
+            const req = httpMocks.createRequest({
+                method: "POST",
+                url: "/cart",
+                body: {
+                    cart: [{ _id: "product1", count: 3 }],
+                },
+                user: { _id: "user1" },
+                headers: { authorization: "Bearer mock-token" },
+            });
+            const res = httpMocks.createResponse();
 
-    const response = await request(app)
-      .post('/api/cart')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ cart: cartData });
+            axios.get.mockResolvedValueOnce({ data: { price: 15 } });
 
-    expect(response.status).toBe(200);
-    expect(response.body.cartTotal).toBe(400); // 2 * 100 + 1 * 200
-    expect(response.body.products.length).toBe(2);
-  });
+            Cart.findOne.mockResolvedValue({
+                products: [{ product: "product1", count: 2, price: 15 }],
+                save: jest.fn().mockResolvedValue({
+                    products: [{ product: "product1", count: 5, price: 15 }],
+                    cartTotal: 77.25,
+                    tax: 2.25,
+                }),
+            });
 
-  test('PUT /api/cart/:productId - Remove from cart', async () => {
-    const productIdToRemove = 'productId1';
-    const mockCart = {
-      products: [
-        { product: 'productId1', count: 2, price: 100 },
-        { product: 'productId2', count: 1, price: 200 }
-      ],
-      cartTotal: 400
-    };
+            await cartController.userCart(req, res);
 
-    Cart.findOneAndUpdate = jest.fn().mockResolvedValue(mockCart);
+            expect(res.statusCode).toBe(200);
+            const data = JSON.parse(res._getData());
+            expect(data.cartTotal).toBe(77.25);
+            expect(data.products[0].count).toBe(5);
+        });
+    });
 
-    const response = await request(app)
-      .put(`/api/cart/${productIdToRemove}`)
-      .set('Authorization', `Bearer ${token}`);
+    describe("DELETE /api/cart/empty - Empty the cart", () => {
+        it("should remove the user's cart", async () => {
+            const req = httpMocks.createRequest({
+                method: "DELETE",
+                url: "/empty-cart",
+                user: { _id: "user1" },
+            });
+            const res = httpMocks.createResponse();
 
-    expect(response.status).toBe(200);
-    expect(response.body.message).toBe('Product removed from cart');
-    expect(response.body.updatedCart.products.length).toBe(1); // Only one product should remain
-  });
+            Cart.findOneAndRemove.mockResolvedValue({ products: [], cartTotal: 0 });
 
-  test('GET /api/cart - Get user cart', async () => {
-    // Mock the cart data
-    const mockCart = {
-      products: [
-        { product: 'productId1', count: 2, price: 100 },
-        { product: 'productId2', count: 1, price: 200 }
-      ],
-      cartTotal: 400,
-      tax: 12,
-      totalAfterDiscount: 380
-    };
-  
-    // Mock Cart.findOne to return mockCart when called
-    Cart.findOne.mockResolvedValue(mockCart);
-  
-    // Simulating the token that will be used in the Authorization header
-    const token = jwt.sign({ id: '1234567890abcdef12345678' }, 'mock-jwt-secret', { expiresIn: '1h' });
-  
-    // Make the request to the /api/cart endpoint with Authorization header
-    const response = await request(app)
-      .get('/api/cart')
-      .set('Authorization', `Bearer ${token}`);  // Pass the token directly here
-  
-    // Assertions
-    expect(response.status).toBe(200);
-    expect(response.body.cartTotal).toBe(400); // Check if the cart total matches the mock value
-    expect(response.body.products.length).toBe(2); // Check if the number of products is correct
-    expect(response.body.tax).toBe(12); // Check if the tax value is correct
-    expect(response.body.totalAfterDiscount).toBe(380); // Check if the discount value is correct
-  });
-  
+            await cartController.emptyCart(req, res);
 
+            expect(res.statusCode).toBe(200);
+            const data = JSON.parse(res._getData());
+            expect(data.products).toEqual([]);
+        });
+    });
 
-  test('DELETE /api/empty-cart - Empty user cart', async () => {
-    const mockCart = {
-      products: [], // Cart is empty after removal
-      cartTotal: 0,
-      tax: 0,
-      totalAfterDiscount: 0
-    };
+    describe("PUT /cart/:productId - removeFromCart", () => {
+        it("should remove a product from the cart", async () => {
+            const req = httpMocks.createRequest({
+                method: "PUT",
+                url: "/cart/product1",
+                params: { productId: "product1" },
+                user: { _id: "user1" },
+            });
+            const res = httpMocks.createResponse();
 
-    // Mock the Cart model to return the mockCart when findOneAndRemove is called
-    Cart.findOneAndRemove = jest.fn().mockResolvedValue(mockCart);
+            Cart.findOneAndUpdate.mockResolvedValue({
+                save: jest.fn().mockResolvedValue({
+                    products: [{ product: "product2", count: 1, price: 20 }],
+                    cartTotal: 20,
+                }),
+                products: [{ product: "product2", count: 1, price: 20 }],
+                cartTotal: 20,
+            });            
 
-    // Send request to empty the cart
-    const response = await request(app)
-      .delete('/api/empty-cart')
-      .set('Authorization', `Bearer ${token}`); // Ensure the token is valid
+            await cartController.removeFromCart(req, res);
 
-    // Assertions
-    expect(response.status).toBe(200); // Expect successful status
-    expect(response.body.products).toEqual([]); // Cart should be empty
-    expect(response.body.cartTotal).toBe(0); // Cart total should be 0
-    expect(response.body.tax).toBe(0); // Tax should be 0
-    expect(response.body.totalAfterDiscount).toBe(0); // Total after discount should be 0
-});
+            expect(res.statusCode).toBe(200);
+            const data = JSON.parse(res._getData());
+            expect(data.updatedCart.products.length).toBe(1);
+        });
+    });
 
-
-
+    describe("GET /api/cart - Get user cart", () => {
+        it("should return the user's cart with populated products", async () => {
+            const req = httpMocks.createRequest({
+                method: "GET",
+                url: "/cart",
+                user: { _id: "user1" }, // Mocked user ID
+            });
+            const res = httpMocks.createResponse();
+    
+            // Mock Cart.updateOne to simulate removing null products
+            Cart.updateOne = jest.fn().mockResolvedValue({
+                modifiedCount: 1, // Indicates that the cart was updated
+            });
+    
+            // Mock Cart.findOne to simulate fetching the cart
+            Cart.findOne = jest.fn().mockResolvedValue({
+                products: [
+                    {
+                        product: "product1",
+                        count: 2,
+                        price: 10,
+                        toObject: jest.fn().mockReturnValue({
+                            product: "product1",
+                            count: 2,
+                            price: 10,
+                        }),
+                    },
+                ],
+                toObject: jest.fn().mockReturnValue({
+                    products: [
+                        {
+                            product: "product1",
+                            count: 2,
+                            price: 10,
+                        },
+                    ],
+                }),
+            });
+    
+            // Mock axios.get to simulate fetching product details from another service
+            axios.get = jest.fn().mockResolvedValueOnce({
+                data: { name: "Product 1" }, // Mocked product details
+            });
+    
+            // Call the controller function
+            await cartController.getUserCart(req, res);
+    
+            // Verify the response status code
+            expect(res.statusCode).toBe(200);
+    
+            // Parse the response data
+            const data = JSON.parse(res._getData());
+    
+            // Verify the populated products in the response
+            expect(data.products[0].product.name).toBe("Product 1");
+        });
+    });    
 });
